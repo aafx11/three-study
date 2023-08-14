@@ -54,6 +54,7 @@ scene.add(light);
 // 平行光是沿着特定方向发射的光
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
 directionalLight.position.set(10, 10, 10);
+directionalLight.target = sphere
 // 光照投射阴影
 directionalLight.castShadow = true;
 
@@ -70,16 +71,20 @@ directionalLight.shadow.camera.left = -5; //
 directionalLight.shadow.camera.right = 5; // 
 scene.add(directionalLight);
 
-const gui = new dat.GUI();
-// gui.add(directionalLight.shadow.camera, 'near')
-//   .min(0)
-//   .max(100)
-//   .step(0.1)
-//   .onChange(() => {
-//     console.log('修改');
-//     directionalLight.shadow.camera.updateProjectionMatrix();
-//   });
+const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight)
+scene.add(directionalLightHelper)
 
+const gui = new dat.GUI();
+gui.add(directionalLight.shadow.camera, 'near')
+  .min(0)
+  .max(100)
+  .step(0.1)
+  .onChange(() => {
+    directionalLight.shadow.camera.updateProjectionMatrix();
+  });
+gui.add(directionalLight.shadow.camera, 'far').min(0).max(100).step(0.1).onChange(() => {
+  directionalLight.shadow.camera.updateProjectionMatrix();
+});
 
 // 直射光源
 // const spotLight = new THREE.SpotLight(0xffffff, 1)
@@ -115,10 +120,15 @@ pointLight.castShadow = true
 pointLight.shadow.radius = 20
 pointLight.shadow.mapSize.set(512, 512)
 
-scene.add(pointLight)
-gui.add(pointLight.position, 'x').min(-5).max(5).step(0.1)
-gui.add(pointLight, 'distance').min(0).max(10).step(0.01)
-gui.add(pointLight, 'decay').min(0).max(5).step(0.01)
+// scene.add(pointLight)
+
+// ( light : PointLight, sphereSize : 球形辅助对象的尺寸. 默认为 1, color : Hex )
+// const pointLightHelper = new THREE.PointLightHelper(pointLight, 10)
+// scene.add(pointLightHelper)
+
+// gui.add(pointLight.position, 'x').min(-5).max(5).step(0.1)
+// gui.add(pointLight, 'distance').min(0).max(10).step(0.01)
+// gui.add(pointLight, 'decay').min(0).max(5).step(0.01)
 
 const smallBall = new THREE.Mesh(
   new THREE.SphereGeometry(0.1, 20, 20),
@@ -156,6 +166,7 @@ function render() {
   smallBall.position.y = 2 + Math.sin(time * 10) / 2
   // 更新控制器。必须在摄像机的变换发生任何手动改变后调用
   controls.update();
+  directionalLightHelper.update()
   renderer.render(scene, camera);
   requestAnimationFrame(render);
 }

@@ -33,11 +33,11 @@ pointsMaterial.sizeAttenuation = false // 指定点的大小是否因相机深�
 
 const TextureLoader = new THREE.TextureLoader()
 const texture = TextureLoader.load(gray)
-pointsMaterial.map = texture // 设置点材质的纹理
-pointsMaterial.alphaMap = texture // 设置点材质的纹理
-pointsMaterial.transparent = true
-pointsMaterial.depthWrite = false
-pointsMaterial.blending = THREE.AdditiveBlending
+pointsMaterial.map = texture // 使用来自Texture的数据设置点的颜色
+pointsMaterial.alphaMap = texture // alpha贴图是一张灰度纹理，用于控制整个表面的不透明度
+pointsMaterial.transparent = true // 定义此材质是否透明,通过设置材质的opacity属性来控制材质透明的程度
+pointsMaterial.depthWrite = false // 渲染此材质是否对深度缓冲区有任何影响
+pointsMaterial.blending = THREE.AdditiveBlending // 在使用此材质显示对象时要使用何种混合
 
 const points = new THREE.Points(sphereGeometry, pointsMaterial)
 scene.add(points)
