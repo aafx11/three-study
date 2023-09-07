@@ -13462,6 +13462,11 @@ function WebGLMorphtargets(gl, capabilities, textures) {
       var morphTargetsCount = morphAttribute !== undefined ? morphAttribute.length : 0;
       var entry = morphTextures.get(geometry);
       if (entry === undefined || entry.count !== morphTargetsCount) {
+        var disposeTexture = function disposeTexture() {
+          texture.dispose();
+          morphTextures.delete(geometry);
+          geometry.removeEventListener('dispose', disposeTexture);
+        };
         if (entry !== undefined) entry.texture.dispose();
         var hasMorphPosition = geometry.morphAttributes.position !== undefined;
         var hasMorphNormals = geometry.morphAttributes.normal !== undefined;
@@ -13523,11 +13528,6 @@ function WebGLMorphtargets(gl, capabilities, textures) {
           size: new Vector2(width, height)
         };
         morphTextures.set(geometry, entry);
-        function disposeTexture() {
-          texture.dispose();
-          morphTextures.delete(geometry);
-          geometry.removeEventListener('dispose', disposeTexture);
-        }
         geometry.addEventListener('dispose', disposeTexture);
       }
 
@@ -37990,10 +37990,12 @@ function _interopRequireWildcard(obj, nodeInterop) { if (!nodeInterop && obj && 
 var camera, scene, renderer, labelRenderer;
 var clock = new THREE.Clock();
 var textureLoader = new THREE.TextureLoader();
+var earth;
 var moon;
 var chinaPosition;
 var chinaLabel;
 var chinaDiv;
+var curve;
 var raycaster = new THREE.Raycaster();
 init();
 animate();
@@ -38026,7 +38028,7 @@ function init() {
     normalScale: new THREE.Vector2(0.85, 0.85) // 法线贴图对材质的影响程度
   });
 
-  var earth = new THREE.Mesh(earthGeometry, earthMaterial);
+  earth = new THREE.Mesh(earthGeometry, earthMaterial);
   // earth.rotation.y = Math.PI;
   scene.add(earth);
 
@@ -38038,6 +38040,19 @@ function init() {
   });
   moon = new THREE.Mesh(moonGeometry, moonMaterial);
   scene.add(moon);
+
+  //根据这一系列的点创建曲线
+  curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-10, 0, 10), new THREE.Vector3(-5, 5, 5), new THREE.Vector3(0, 0, 5), new THREE.Vector3(5, -5, 5), new THREE.Vector3(10, 0, 10)], true);
+  // 要将曲线划分为的分段数
+  var points = curve.getPoints(500);
+  console.log('points', points);
+  // 通过点队列设置该 BufferGeometry 的 attribute
+  var geometry = new THREE.BufferGeometry().setFromPoints(points);
+  var material = new THREE.LineBasicMaterial({
+    color: 0xff0000
+  });
+  var curveObj = new THREE.Line(geometry, material);
+  scene.add(curveObj);
 
   // 添加提示标签
   var earthDiv = document.createElement('div');
@@ -38081,8 +38096,9 @@ function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  labelRenderer.setSize(window.innerWidth, window.innerHeight);
+  // labelRenderer.setSize(window.innerWidth, window.innerHeight);
 }
+
 function animate() {
   requestAnimationFrame(animate);
 
@@ -38090,7 +38106,16 @@ function animate() {
   var elapsed = clock.getElapsedTime();
 
   // 月球运动轨迹
-  moon.position.set(Math.sin(elapsed) * 5, 0, Math.cos(elapsed) * 5);
+  // moon.position.set(Math.sin(elapsed) * 5, 0, Math.cos(elapsed) * 5);
+
+  // 月球运动轨迹跟随曲线
+  var time = elapsed / 10 % 1;
+  var point = curve.getPoint(time);
+  // console.log('getPoints', point);
+  moon.position.copy(point);
+  // 相机跟随曲线
+  // camera.position.copy(point);
+  // camera.lookAt(earth.position);
 
   // 标签位置
   var chinaPosition = chinaLabel.position.clone();
@@ -38106,7 +38131,7 @@ function animate() {
     chinaLabel.element.classList.add('visible');
   } else {
     var minDistance = intersects[0].distance;
-    console.log(minDistance, labelDistance);
+    // console.log(minDistance, labelDistance);
     if (minDistance < labelDistance) {
       chinaLabel.element.classList.remove('visible');
     } else {
@@ -38142,7 +38167,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "4735" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "14184" + '/');
   ws.onmessage = function (event) {
     checkedAssets = {};
     assetsToAccept = [];
